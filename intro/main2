@@ -1,0 +1,65 @@
+#Below is Terraform Block.
+#main.tf file can be any name but .tf should be there,only main can change like ujjawala.tf , earmuffs.tf.
+#Anything inside this block changes ,you hav to run the "terraform init" again.
+/* Multi-line comment */
+terraform {
+  required_providers {  #Providers chahiye (can be multiple providers )
+    aws = {     # Here aws is a key name this can be anything like "ujj" "gun" but youll have to pass the name at provider see 3rd equation
+      source = "hashicorp/aws" # AWS ka provider chaiye
+      version = "5.82.2"  # Iss version ka AWS ka provider chahiye ,terraform download karke laao.
+    }
+    google = {
+      source = "hashicorp/google"
+      version = "6.14.1"
+    }
+
+  } 
+}
+
+provider "aws" { #here if aws is named "gun" or"knife" this will be (provider "gun") ----------3rd 
+  # Configuration options
+  #region = "us-east-1"
+  region = local.AWS_REGION #calling value from local variable here
+}
+
+provider "google" {
+  # Configuration options
+}
+locals {
+  AWS_REGION = "use-east-1"  # both of These will be passed in the aws providers region.
+  VPS_CIDR_BLOCK = "10.0.0.0/24" 
+}
+/*What if I want different values for DEV and PROD like tfvars different files?we can create nested block in locals like below:
+locals {
+  AWS_REGION = “us-east-1”
+  DEV={
+    VPC_CIDR_BLOCK = “10.0.0.0/24”
+  }
+  PROD = {
+    VPC_CIDR_BLOCK = “10.10.0.0/24”
+  }
+}
+###### And to call these values in resource we do this (a detailed address):
+resource "aws_vpc" "Givenname2"{       # resource identifier has two parameters (1-the element you want to create like vpc,ec2 etc and other one is the name of it) ,here givennname2 is a identifier name it must not be same
+    cidr_block = local.DEV.VPS_CIDR_BLOCK     #calling value from local variable 
+}
+*/
+variable "AWS_VPC_CIDR"{ #defined variable------------------(1)
+  default = "192.168.0.0/24"
+}
+variable "GCP_VPC_NAME" { #trying to see if multiple variables for multiple clouds will work or not
+  default="mygcpvpc"   #---------------------------2nd
+  
+}
+resource "aws_vpc" "Givenname"{  # resource identifier has two parameters (1-the element you want to create like vpc,ec2 etc and other one is the name of it)
+#  cidr_block = "192.168.1.0/24"  #Commented because below I am using the variable I define at 1st equation
+    cidr_block = var.AWS_VPC_CIDR # variable ko use karna hai from 1st equation.
+    tags = {owner = "ujj",env="dev", Name="devvpc"} # the name here mentioned will be the name of the vpc "devvpc"
+}
+resource "aws_vpc" "Givenname2"{  # resource identifier has two parameters (1-the element you want to create like vpc,ec2 etc and other one is the name of it) ,here givennname2 is a identifier name it must not be same
+ # cidr_block = "172.168.0.0/16" #commented to show example of calling local variable
+    cidr_block = local.VPS_CIDR_BLOCK #calling value from local variable 
+}
+resource "google_compute_network" "main"{
+  name = var.GCP_VPC_NAME # variable ko use karna hai from 2nd
+}
